@@ -71,16 +71,16 @@ def csv_timeline(
 
     command = [
         "/hayabusa/hayabusa",
-        "csv-timeline",
+        "json-timeline",
         "--ISO-8601",
         "--UTC",
         "--no-wizard",
         "--quiet",
         "--profile",
-        "super-verbose",      # تغيير الملف الشخصي إلى super-verbose
+        "timesketch-verbose",      # تغيير الملف الشخصي إلى super-verbose
         "--clobber",
         "--output",
-        "timeline.jsonl",     # تعيين الإخراج بصيغة JSONL
+        output_file.path,     # تعيين الإخراج بصيغة JSONL
         "--directory",
         temp_dir,
     ]
