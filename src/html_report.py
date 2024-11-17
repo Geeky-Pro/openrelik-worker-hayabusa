@@ -18,9 +18,12 @@ import subprocess
 import time
 from uuid import uuid4
 
-from openrelik_worker_common.file_utils import create_output_file
-from openrelik_worker_common.task_utils import create_task_result, get_input_files
 
+from openrelik_worker_common.utils import (
+    create_output_file,
+    get_input_files,
+    task_result,
+)
 
 from .app import celery
 
@@ -34,12 +37,6 @@ TASK_METADATA = {
     "description": "Windows event log triage",
 }
 
-COMPATIBLE_INPUTS = {
-    "data_types": [],
-    "mime_types": ["application/x-ms-evtx"],
-    "filenames": ["*.evtx"],
-}
-
 
 @celery.task(bind=True, name=TASK_NAME, metadata=TASK_METADATA)
 def html_report(
@@ -50,17 +47,14 @@ def html_report(
     workflow_id=None,
     task_config={},
 ) -> str:
-    input_files = get_input_files(
-        pipe_result, input_files or [], filter=COMPATIBLE_INPUTS
-    )
-    if not input_files:
-        raise RuntimeError("No compatible input files")
+    input_files = get_input_files(pipe_result, input_files or [])
     output_files = []
 
     output_file = create_output_file(
         output_path,
-        display_name="Hayabusa_HTML_report.html",
-        data_type="openrelik:hayabusa:html_report",
+        filename="Hayabusa_HTML_report",
+        file_extension="html",
+        data_type="openrelik:worker:hayabusa:file:html",
     )
 
     # Create temporary directory and hard link files for processing
@@ -101,7 +95,7 @@ def html_report(
     if not output_files:
         raise RuntimeError("Hayabusa didn't create any output files")
 
-    return create_task_result(
+    return task_result(
         output_files=output_files,
         workflow_id=workflow_id,
         command=" ".join(command),

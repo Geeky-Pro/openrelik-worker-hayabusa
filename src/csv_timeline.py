@@ -18,10 +18,14 @@ import subprocess
 import time
 from uuid import uuid4
 
-from openrelik_worker_common.file_utils import create_output_file
-from openrelik_worker_common.task_utils import create_task_result, get_input_files
+from openrelik_worker_common.utils import (
+    create_output_file,
+    get_input_files,
+    task_result,
+)
 
 from .app import celery
+
 
 # Task name used to register and route the task to the correct queue.
 TASK_NAME = "openrelik-worker-hayabusa.tasks.csv_timeline"
@@ -30,12 +34,6 @@ TASK_NAME = "openrelik-worker-hayabusa.tasks.csv_timeline"
 TASK_METADATA = {
     "display_name": "Hayabusa CSV timeline",
     "description": "Windows event log triage",
-}
-
-COMPATIBLE_INPUTS = {
-    "data_types": [],
-    "mime_types": ["application/x-ms-evtx"],
-    "filenames": ["*.evtx"],
 }
 
 
@@ -48,18 +46,14 @@ def csv_timeline(
     workflow_id=None,
     task_config={},
 ) -> str:
-    input_files = get_input_files(
-        pipe_result, input_files or [], filter=COMPATIBLE_INPUTS
-    )
-    if not input_files:
-        raise RuntimeError("No compatible input files")
-
+    input_files = get_input_files(pipe_result, input_files or [])
     output_files = []
 
     output_file = create_output_file(
         output_path,
-        display_name="Hayabusa_CSV_timeline.csv",
-        data_type="openrelik:hayabusa:csv_timeline",
+        filename="Hayabusa_CSV_timeline",
+        file_extension="csv",
+        data_type="openrelik:worker:hayabusa:file:csv",
     )
 
     # Create temporary directory and hard link files for processing
@@ -100,10 +94,8 @@ def csv_timeline(
     if not output_files:
         raise RuntimeError("Hayabusa didn't create any output files")
 
-    return create_task_result(
+    return task_result(
         output_files=output_files,
         workflow_id=workflow_id,
         command=" ".join(command),
     )
-
-
